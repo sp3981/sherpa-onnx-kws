@@ -1,4 +1,4 @@
-﻿# 单容器同时连接多个 LVA，每个 LVA 独立监听/唤醒/推流。
+# 单容器同时连接多个 LVA，每个 LVA 独立监听/唤醒/推流。
 # 用法:
 #   cp .env.example .env
 #   docker compose up -d --build
@@ -15,6 +15,7 @@ services:
       context: .
       args:
         DOWNLOAD_MODEL: ${DOWNLOAD_MODEL:-1}
+        MODEL_VERSION: ${MODEL_VERSION:-sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01}
         APT_MIRROR: ${APT_MIRROR:-mirrors.aliyun.com}
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
         GH_PROXY: ${GH_PROXY:-}

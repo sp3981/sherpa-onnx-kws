@@ -1,9 +1,12 @@
-﻿# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1
 # 单容器多 LVA 中文唤醒词外设。
 # 构建: docker build -t sherpa-onnx-kws .
 FROM python:3.11-slim
 
 ARG DOWNLOAD_MODEL=1
+# 模型版本（kws-models 发布资产名，例如 sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01）
+# 手动指定: docker build --build-arg MODEL_VERSION=xxx .
+ARG MODEL_VERSION=sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01
 ARG APT_MIRROR=deb.debian.org
 ARG PIP_INDEX_URL=https://pypi.org/simple
 ARG GH_PROXY=
@@ -41,7 +44,7 @@ COPY scripts ./scripts
 
 RUN if [ "${DOWNLOAD_MODEL}" = "1" ]; then \
         export GH_PROXY="${GH_PROXY}"; \
-        bash scripts/download-model.sh /opt/kws-model; \
+        bash scripts/download-model.sh /opt/kws-model "${MODEL_VERSION}"; \
     else \
         echo "DOWNLOAD_MODEL=0，跳过模型下载，请通过挂载提供 KWS_MODEL_DIR"; \
     fi

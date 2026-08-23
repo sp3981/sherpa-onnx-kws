@@ -1,4 +1,4 @@
-﻿# sherpa-onnx-kws：多麦克风多 LVA 中文唤醒词外设
+# sherpa-onnx-kws：多麦克风多 LVA 中文唤醒词外设
 
 本项目把带麦克风的 Linux 设备变成 **多个 Linux Voice Assistant (LVA) 的唤醒外设**。
 每个 LVA 对应一路独立麦克风，即使多个 LVA 使用相同的唤醒词，也只会唤醒真正听到声音的那一路。
@@ -90,9 +90,36 @@ LVA_AUDIO_SOURCES=pulse:alsa_input.usb-mic-1|pulse:alsa_input.usb-mic-2
 | `PULSE_SERVER` | 自动生成 | 可手动覆盖 |
 | `AUDIO_GID` | `audio` | 容器内 audio 组 |
 | `DOWNLOAD_MODEL` | `1` | 构建时是否下载模型 |
+| `MODEL_VERSION` | `sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01` | 构建时下载的模型版本（kws-models 发布资产名） |
 | `APT_MIRROR` | `mirrors.aliyun.com` | apt 源 |
 | `PIP_INDEX_URL` | 清华源 | pip 源 |
 | `GH_PROXY` | 空 | GitHub 加速前缀 |
+
+## 手动指定模型版本
+
+默认下载 `sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01`。
+如果使用其他 kws-models 发布版本，可以在 `.env` 里指定（推荐）：
+
+```env
+MODEL_VERSION=sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01
+```
+
+也可以直接给 Dockerfile 传 build arg：
+
+```bash
+docker build \
+  --build-arg MODEL_VERSION=sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01 \
+  -t sherpa-onnx-kws:latest .
+```
+
+或通过 compose 覆盖：
+
+```bash
+MODEL_VERSION=sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01 docker compose build kws
+```
+
+版本名需要是 [sherpa-onnx kws-models](https://github.com/k2-fsa/sherpa-onnx/releases/tag/kws-models) 下的发布资产名（不含 `.tar.bz2`）。
+
 
 ## 查询音频源
 
