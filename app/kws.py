@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """sherpa-onnx 关键词检测（KWS）封装（单模型多 stream，供多 LVA 独立唤醒）。
 
 使用一个 sherpa_onnx.KeywordSpotter 实例 + 多个 stream：
@@ -120,7 +120,14 @@ class KeywordSpotter:
             while self._kws.is_ready(stream):
                 self._kws.decode_stream(stream)
             result = self._kws.get_result(stream)
-            keyword = result.keyword if result and result.keyword else None
+            # 兼容不同 sherpa-onnx 版本：
+            # 旧版返回 KeywordSpotterResult（带 .keyword），新版直接返回 str
+            if result is None:
+                keyword = None
+            elif isinstance(result, str):
+                keyword = result
+            else:
+                keyword = getattr(result, "keyword", None)
             if keyword:
                 # 命中后只重置当前 LVA 的 stream，不影响其它 LVA
                 self._streams[stream_id] = self._kws.create_stream()
