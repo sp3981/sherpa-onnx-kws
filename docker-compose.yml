@@ -1,0 +1,80 @@
+﻿# 单容器同时连接多个 LVA，每个 LVA 独立监听/唤醒/推流。
+# 用法:
+#   cp .env.example .env
+#   docker compose up -d --build
+#
+# 多 LVA 示例:
+#   LVA_URLS=ws://lva1:10700/api/peripheral,ws://lva2:10700/api/peripheral
+#   LVA_NAMES=kws-1,kws-2
+#   LVA_UUID_FILES=/data/uuid1,/data/uuid2
+#   LVA_KEYWORDS=你好小智|小智小智,你好同学
+
+services:
+  kws:
+    build:
+      context: .
+      args:
+        DOWNLOAD_MODEL: ${DOWNLOAD_MODEL:-1}
+        APT_MIRROR: ${APT_MIRROR:-mirrors.aliyun.com}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+        GH_PROXY: ${GH_PROXY:-}
+    image: sherpa-onnx-kws:latest
+    pull_policy: build
+    container_name: sherpa-kws
+    restart: unless-stopped
+
+    environment:
+      # ---- 多 LVA（逗号分隔 URL；旧的单 LVA 变量 LVA_URL 也兼容）----
+      LVA_URLS: ${LVA_URLS:-}
+      LVA_URL: ${LVA_URL:-ws://127.0.0.1:10700/api/peripheral}
+      LVA_NAMES: ${LVA_NAMES:-}
+      LVA_UUID_FILES: ${LVA_UUID_FILES:-}
+      # | 分隔每个 LVA，组内逗号分隔多个唤醒词；不填则所有 LVA 共用 KEYWORDS
+      LVA_KEYWORDS: ${LVA_KEYWORDS:-}
+      # 用 | 分隔，每个 LVA 一个麦克风；不填则所有 LVA 共用 AUDIO_SOURCE
+      LVA_AUDIO_SOURCES: ${LVA_AUDIO_SOURCES:-}
+      # protobuf=旧音频外设协议；json=当前 LVA 官方 JSON 协议（推荐）
+      LVA_PROTOCOL: ${LVA_PROTOCOL:-protobuf}
+      # 可选，按 LVA 用 | 分隔覆盖协议
+      LVA_PROTOCOLS: ${LVA_PROTOCOLS:-}
+      RECONNECT_MIN_S: ${RECONNECT_MIN_S:-1}
+      RECONNECT_MAX_S: ${RECONNECT_MAX_S:-30}
+
+      # ---- 外设身份（单 LVA 兼容；优先使用 .env 的值）----
+      DEVICE_NAME: ${DEVICE_NAME:-sherpa-onnx-kws}
+      DEVICE_UUID_FILE: ${DEVICE_UUID_FILE:-/data/device_uuid}
+      SUPPORTED_LANGUAGES: ${SUPPORTED_LANGUAGES:-zh_CN,en_US}
+
+      # ---- 唤醒词（单 LVA 兼容；多 LVA 时可用 LVA_KEYWORDS 覆盖）----
+      KEYWORDS: ${KEYWORDS:-你好小智}
+      KWS_MODEL_DIR: ${KWS_MODEL_DIR:-/opt/kws-model}
+      KWS_NUM_THREADS: ${KWS_NUM_THREADS:-2}
+      KWS_FAKE: ${KWS_FAKE:-0}
+      WAKE_COOLDOWN_S: ${WAKE_COOLDOWN_S:-3}
+      WAKE_BUFFER_S: ${WAKE_BUFFER_S:-2}
+      WAKE_START_TIMEOUT_S: ${WAKE_START_TIMEOUT_S:-8}
+
+      # ---- 音频源: pulse | pulse:<设备> | alsa | alsa:<pcm> | file:<wav路径> | synth[:频率Hz] ----
+      AUDIO_SOURCE: ${AUDIO_SOURCE:-pulse}
+      AUDIO_SAMPLE_RATE: ${AUDIO_SAMPLE_RATE:-16000}
+      CHUNK_MS: ${CHUNK_MS:-100}
+      MAX_STREAM_SECONDS: ${MAX_STREAM_SECONDS:-120}
+
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_PROTOCOL_HEX: ${LOG_PROTOCOL_HEX:-0}
+
+      PULSE_SERVER: ${PULSE_SERVER:-unix:${PULSE_SOCKET:-/run/user/1000/pulse}/native}
+
+    volumes:
+      - kws-data:/data
+      - ${PULSE_SOCKET:-/run/user/1000/pulse}:${PULSE_SOCKET:-/run/user/1000/pulse}:ro
+      - kws-model:/opt/kws-model
+
+    devices:
+      - /dev/snd:/dev/snd
+    group_add:
+      - "${AUDIO_GID:-audio}"
+
+volumes:
+  kws-data:
+  kws-model:
